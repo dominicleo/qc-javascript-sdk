@@ -1,0 +1,41 @@
+{
+  "name": "qc-javascript-sdk",
+  "version": "1.0.0",
+  "license": "MIT",
+  "authors": "leo <me@dominicleo.com> (https://github.com/dominicleo)",
+  "main": "lib/index.js",
+  "unpkg": "dist/index.js",
+  "module": "es/index.js",
+  "scripts": {
+    "format": "prettier --write \"{src,test}/**/*.{js,ts}\" index.d.ts \"**/*.md\"",
+    "format:check": "prettier --list-different \"{src,test}/**/*.{js,ts}\" index.d.ts \"**/*.md\"",
+    "lint": "eslint src test",
+    "test": "jest",
+    "test:watch": "npm test -- --watch",
+    "test:coverage": "npm test -- --coverage",
+    "clean": "rimraf lib dist es coverage",
+    "start": "rollup -c -w",
+    "build": "rollup -c"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.4.5",
+    "@babel/plugin-proposal-class-properties": "^7.4.4",
+    "@babel/plugin-syntax-dynamic-import": "^7.2.0",
+    "@babel/preset-env": "^7.4.5",
+    "eslint": "^6.0.1",
+    "jest": "^24.8.0",
+    "prettier": "^1.18.2",
+    "rimraf": "^2.6.3",
+    "rollup": "^1.16.4",
+    "rollup-plugin-babel": "^4.3.3",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-replace": "^2.2.0",
+    "rollup-plugin-terser": "^5.1.0",
+    "rollup-plugin-typescript": "^1.0.1",
+    "typescript": "^3.5.2"
+  },
+  "jest": {
+    "testRegex": "(/test/.*\\.spec\\.js)$"
+  },
+  "sideEffects": false
+}
