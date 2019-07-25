@@ -4,15 +4,55 @@ typeof define === 'function' && define.amd ? define(['exports'], factory) :
 (global = global || self, factory(global.JSSDK = {}));
 }(this, function (exports) { 'use strict';
 
-const ERROR_NAME_EMPTY_CODE = 100003;
-const ERROR_NAME_EMPTY_TEXT = '请确认 JSSDK 名称.';
-const ERROR_TIMEOUT_CODE = 100004;
-const ERROR_TIMEOUT_TEXT = 'JSSDK %s 响应超时';
-const ERROR_JSBRIDGE_NOTSUPPORT_CODE = 100005;
-const ERROR_JSBRIDGE_NOTSUPPORT_TEXT = 'JSBridge 不受支持.';
-const ERROR_PARAMS_TYPE_CODE = 100006;
-const ERROR_PARAMS_TYPE_TEXT = '请确认 JSSDK 参数类型';
-const DEFAULT_TIMEOUT_EXCLUDE = [
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+/* global Reflect, Promise */
+
+var extendStatics = function(d, b) {
+    extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return extendStatics(d, b);
+};
+
+function __extends(d, b) {
+    extendStatics(d, b);
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+}
+
+var __assign = function() {
+    __assign = Object.assign || function __assign(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+
+var ERROR_NAME_EMPTY_CODE = 100003;
+var ERROR_NAME_EMPTY_TEXT = '请确认 JSSDK 名称.';
+var ERROR_TIMEOUT_CODE = 100004;
+var ERROR_TIMEOUT_TEXT = 'JSSDK %s 响应超时';
+var ERROR_JSBRIDGE_NOTSUPPORT_CODE = 100005;
+var ERROR_JSBRIDGE_NOTSUPPORT_TEXT = 'JSBridge 不受支持.';
+var ERROR_PARAMS_TYPE_CODE = 100006;
+var ERROR_PARAMS_TYPE_TEXT = '请确认 JSSDK 参数类型';
+var DEFAULT_TIMEOUT_EXCLUDE = [
     'Moxiecert',
     'watchShake',
     'jump',
@@ -24,40 +64,37 @@ const DEFAULT_TIMEOUT_EXCLUDE = [
     'getWldData',
 ];
 
-const isBrowser = typeof window !== 'undefined';
+var isBrowser = typeof window !== 'undefined';
 function isFunction(value) {
     return value instanceof Function;
 }
 function isPlainObject(value) {
     if (typeof value !== 'object' || value === null)
         return false;
-    let proto = value;
+    var proto = value;
     while (Object.getPrototypeOf(proto) !== null) {
         proto = Object.getPrototypeOf(proto);
     }
     return Object.getPrototypeOf(value) === proto;
 }
 
-class SDKError extends Error {
-    constructor(message, code) {
-        super(message);
-        this.code = null;
-        this.name = 'SDKError';
-        this.message = message;
-        code && (this.code = code);
+var SDKError = /** @class */ (function (_super) {
+    __extends(SDKError, _super);
+    function SDKError(message, code) {
+        var _this = _super.call(this, message) || this;
+        _this.code = null;
+        _this.name = 'SDKError';
+        _this.message = message;
+        code && (_this.code = code);
+        return _this;
     }
-}
+    return SDKError;
+}(Error));
 
-const defaults = {
-    debug: false,
-    timeout: 10000,
-    timeoutExclude: DEFAULT_TIMEOUT_EXCLUDE,
-    responseSuccessCode: 0,
-};
 function getJSBridge() {
     if (!isBrowser)
         return false;
-    const iosBridge = window &&
+    var iosBridge = window &&
         window.webkit &&
         window.webkit.messageHandlers &&
         window.webkit.messageHandlers.QCJSInterface &&
@@ -65,15 +102,15 @@ function getJSBridge() {
         ? window.webkit.messageHandlers.QCJSInterface.postMessage
         : false;
     if (isFunction(iosBridge)) {
-        return (params) => {
+        return function (params) {
             iosBridge(JSON.parse(JSON.stringify(params)));
         };
     }
-    const androidBridge = window && window.QCJSInterface && window.QCJSInterface.callApp
+    var androidBridge = window && window.QCJSInterface && window.QCJSInterface.callApp
         ? window.QCJSInterface.callApp
         : false;
     if (isFunction(androidBridge)) {
-        return (params) => {
+        return function (params) {
             androidBridge(JSON.stringify(params));
         };
     }
@@ -85,19 +122,30 @@ function responseParse(value) {
     try {
         return JSON.parse(value);
     }
-    catch {
+    catch (_a) {
         return {};
     }
 }
-class SDK {
-    constructor(options) {
+var defaults = {
+    debug: false,
+    timeout: 10000,
+    timeoutExclude: DEFAULT_TIMEOUT_EXCLUDE,
+    responseSuccessCode: 0,
+};
+var JSBridge = getJSBridge();
+var SDK = /** @class */ (function () {
+    function SDK(options) {
         this.id = 1;
-        this.options = defaults;
-        this.options = Object.assign(this.options, SDK.defaults, options);
+        this.options = Object.assign(defaults, options);
     }
-    call(name, params) {
-        const { responseSuccessCode, timeout, timeoutExclude = [], transformRequest, } = this.options;
-        const JSBridge = getJSBridge();
+    // 创建临时 id
+    SDK.prototype.callbackid = function (name) {
+        var time = +new Date();
+        return ['JSBridge', name, time, ++this.id].join('_');
+    };
+    SDK.prototype.call = function (name, params) {
+        var _this = this;
+        var _a = this.options, responseSuccessCode = _a.responseSuccessCode, timeout = _a.timeout, _b = _a.timeoutExclude, timeoutExclude = _b === void 0 ? [] : _b, transformRequest = _a.transformRequest;
         if (!name) {
             return Promise.reject(new SDKError(ERROR_NAME_EMPTY_TEXT, ERROR_NAME_EMPTY_CODE));
         }
@@ -107,13 +155,13 @@ class SDK {
         if (!isFunction(JSBridge)) {
             return Promise.reject(new SDKError(ERROR_JSBRIDGE_NOTSUPPORT_TEXT, ERROR_JSBRIDGE_NOTSUPPORT_CODE));
         }
-        return new Promise((resolve, reject) => {
-            const id = this.callbackid(name);
-            const config = { method: name, params, callback: id };
-            const { callback } = params || {};
+        return new Promise(function (resolve, reject) {
+            var id = _this.callbackid(name);
+            var config = { method: name, params: params, callback: id };
+            var callback = (params || {}).callback;
             // JSSDK 超时处理
             if (!timeoutExclude.includes(name)) {
-                SDK.timer[id] = setTimeout(() => {
+                SDK.timer[id] = setTimeout(function () {
                     if (isFunction(SDK.cache[id])) {
                         delete SDK.cache[id];
                     }
@@ -121,8 +169,8 @@ class SDK {
                 }, timeout);
             }
             // 创建 JSSDK 回调方法
-            SDK.cache[id] = (source) => {
-                const response = responseParse(source);
+            SDK.cache[id] = function (source) {
+                var response = responseParse(source);
                 // 释放 JSSDK 超时
                 SDK.timer[id] && clearTimeout(SDK.timer[id]);
                 // 执行参数回调
@@ -135,36 +183,30 @@ class SDK {
             }
             JSBridge(config);
         });
-    }
-    // 兼容老版本 JSSDK
-    track(name, params) {
-        return new SDK().call(name, params);
-    }
-    // 创建临时 id
-    callbackid(name) {
-        const time = +new Date();
-        return ['JSSDK', name, time, ++this.id].join('_');
-    }
+    };
+    SDK.track = function (name, params) {
+        return new SDK({}).call(name, params);
+    };
     // 输入日志
-    logger(message) {
-        const time = new Date()
+    SDK.prototype.logger = function (message) {
+        var time = new Date()
             .toTimeString()
             .replace(/.*(\d{2}:\d{2}:\d{2}).*/, '$1');
-        this.options.debug && console.log(`JSSDK [${time}]`, message);
-    }
+        this.options.debug && console.log("JSSDK [" + time + "]", message);
+    };
     // 客户端回调
-    static appCallback(options) {
-        const response = responseParse(options);
-        const { callbackid, data: responseBody } = response;
-        const callback = SDK.cache[callbackid];
+    SDK.appCallback = function (options) {
+        var response = responseParse(options);
+        var callbackid = response.callbackid, responseBody = response.data;
+        var callback = SDK.cache[callbackid];
         if (isFunction(callback)) {
-            callback({ ...responseBody });
+            callback(__assign({}, responseBody));
         }
-    }
-}
-SDK.defaults = defaults;
-SDK.cache = {};
-SDK.timer = {};
+    };
+    SDK.cache = {};
+    SDK.timer = {};
+    return SDK;
+}());
 if (isBrowser) {
     // 老版本
     if (!window.QCJSAPI) {

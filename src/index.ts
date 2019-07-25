@@ -12,6 +12,7 @@ import {
 import { isBrowser, isFunction, isPlainObject } from './utils';
 import SDKError from './error';
 
+export type IParams = any;
 interface IOptions {
   debug?: boolean;
   timeout?: number;
@@ -22,15 +23,8 @@ interface IOptions {
   onError?: any;
 }
 
-type IParams = any;
-
 interface IResponse {
   code?: number;
-}
-
-interface ISDK {
-  id: number;
-  options: IOptions;
 }
 
 interface IConfig {
@@ -40,13 +34,6 @@ interface IConfig {
   params?: IParams;
   data?: any;
 }
-
-const defaults: IOptions = {
-  debug: false,
-  timeout: 10000,
-  timeoutExclude: DEFAULT_TIMEOUT_EXCLUDE,
-  responseSuccessCode: 0,
-};
 
 function getJSBridge() {
   if (!isBrowser) return false;
@@ -90,25 +77,39 @@ function responseParse(value: any) {
   }
 }
 
-class SDK implements ISDK {
-  id = 1;
-  options = defaults;
-  static defaults: IOptions = defaults;
-  static cache: { [key: string]: any } = {};
-  static timer: { [key: string]: any } = {};
+const defaults: IOptions = {
+  debug: false,
+  timeout: 10000,
+  timeoutExclude: DEFAULT_TIMEOUT_EXCLUDE,
+  responseSuccessCode: 0,
+};
 
-  constructor(options?: IOptions) {
-    this.options = Object.assign(this.options, SDK.defaults, options);
+const JSBridge: any = getJSBridge();
+
+type ICache = { [key: string]: any };
+type ITimer = { [key: string]: any };
+
+class SDK {
+  private id: number;
+  options: IOptions;
+  static cache: ICache = {};
+  static timer: ITimer = {};
+  constructor(options: IOptions) {
+    this.id = 1;
+    this.options = Object.assign(defaults, options);
   }
-  call(name: string, params?: IParams): Promise<IResponse> {
+  // 创建临时 id
+  protected callbackid(name: string): string {
+    const time: number = +new Date();
+    return ['JSBridge', name, time, ++this.id].join('_');
+  }
+  call(name: string, params: IParams): Promise<IResponse> {
     const {
       responseSuccessCode,
       timeout,
       timeoutExclude = [],
       transformRequest,
     }: IOptions = this.options;
-
-    const JSBridge: any = getJSBridge();
 
     if (!name) {
       return Promise.reject(
@@ -170,18 +171,9 @@ class SDK implements ISDK {
       JSBridge(config);
     });
   }
-
-  // 兼容老版本 JSSDK
-  track(name: string, params: any): Promise<IResponse> {
-    return new SDK().call(name, params);
+  static track(name: string, params: IParams): Promise<IResponse> {
+    return new SDK({}).call(name, params);
   }
-
-  // 创建临时 id
-  protected callbackid(name: string): string {
-    const time: number = +new Date();
-    return ['JSSDK', name, time, ++this.id].join('_');
-  }
-
   // 输入日志
   protected logger(message: any) {
     const time: string = new Date()
@@ -213,5 +205,11 @@ if (isBrowser) {
   }
 }
 
-export { SDKError };
+export {
+  SDKError,
+  IConfig as SDKConfig,
+  IOptions as SDKOptions,
+  IParams as SDKParams,
+  IResponse as SDKResponse,
+};
 export default SDK;
